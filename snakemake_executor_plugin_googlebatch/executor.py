@@ -24,6 +24,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # There is an async client but I'm not sure we'd get much benefit
         try:
             self.batch = batch_v1.BatchServiceClient()
+            self.logger.info("Successfully connected to Google Batch.")
         except Exception as e:
             raise WorkflowError("Unable to connect to Google Batch.", e)
 
@@ -51,6 +52,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         cpu_milli = self.get_param(job, "cpu_milli")
         resources.cpu_milli = cpu_milli
         resources.memory_mib = memory
+        self.logger.debug(f"Task resources: cpu_milli={cpu_milli}, memory_mib={memory}")
         return resources
 
     def get_labels(self, job):
@@ -66,6 +68,7 @@ class GoogleBatchExecutor(RemoteExecutor):
                 continue
             key, value = contender.split("=", 1)
             labels[key] = value
+        self.logger.debug(f"Job labels: {labels}")
         return labels
 
     def get_envvar_declarations(self):
@@ -80,13 +83,17 @@ class GoogleBatchExecutor(RemoteExecutor):
         """
         bucket = self.get_param(job, "bucket")
         if not bucket:
+            self.logger.debug("No bucket provided, skipping storage.")
             return
 
+        self.logger.debug(f"Adding storage for bucket {bucket}.")
         gcs_bucket = batch_v1.GCS()
         gcs_bucket.remote_path = bucket
         gcs_volume = batch_v1.Volume()
         gcs_volume.gcs = gcs_bucket
-        gcs_volume.mount_path = self.get_param(job, "mount_path")
+        mount_path = self.get_param(job, "mount_path")
+        gcs_volume.mount_path = mount_path
+        self.logger.debug(f"Mounting bucket {bucket} to {mount_path}.")
         task.volumes = [gcs_volume]
 
     def generate_jobid(self, job):
@@ -102,7 +109,10 @@ class GoogleBatchExecutor(RemoteExecutor):
         """
         family = self.get_param(job, "image_family")
         if "batch-cos" not in family:
+            self.logger.info("Not using a container for this job.")
             return
+
+        self.logger.info("Using a container for this job.")
 
         # Default entrypoint assumes the setup wrote our command here
         if entrypoint is None:
@@ -114,6 +124,8 @@ class GoogleBatchExecutor(RemoteExecutor):
         # honor a googlebatch_container in case it is distinct
         image = self.workflow.remote_execution_settings.container_image
         image = self.get_param(job, "container") or image
+        if image != self.workflow.remote_execution_settings.container_image:
+            self.logger.debug(f"Using custom container image {image}.")
         container = batch_v1.Runnable.Container()
         container.image_uri = image
 
@@ -163,6 +175,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         Get a command writer for a job.
         """
         family = self.get_param(job, "image_family")
+        self.logger.debug(f"Using command writer for family: {family}")
         command = self.format_job_exec(job)
         snakefile = self.read_snakefile()
 
@@ -260,6 +273,7 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         # We can specify what resources are requested by each task.
         task.compute_resource = self.get_task_resources(job)
+        self.logger.debug(f"Task spec: {task}")
 
         # Tasks are grouped inside a job using TaskGroups.
         # Currently, it's possible to have only one task group.
@@ -329,6 +343,10 @@ class GoogleBatchExecutor(RemoteExecutor):
         family = self.get_param(job, "image_family")
         project = self.get_param(job, "image_project")
 
+        self.logger.info(
+            f"Requesting machine_type {machine_type} with image family {family}"
+        )
+
         # Disks is how we specify the image we want (we need centos to get MPI working)
         # This could also be batch-centos, batch-debian, batch-cos
         # but MPI won't work on all of those
@@ -345,6 +363,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # https://github.com/googleapis/googleapis/blob/master/google/cloud/batch/v1/job.proto#L479 and  # noqa
         # https://github.com/googleapis/google-cloud-python/blob/main/packages/google-cloud-batch/google/cloud/batch_v1/types/job.py#L672  # noqa
         if self.is_preemptible(job):
+            self.logger.debug("Using preemptible instance.")
             policy.provisioning_model = 3
 
         instances = batch_v1.AllocationPolicy.InstancePolicyOrTemplate()
