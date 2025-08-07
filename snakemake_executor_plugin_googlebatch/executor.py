@@ -154,6 +154,7 @@ class GoogleBatchExecutor(RemoteExecutor):
             preemptible = all(is_p(rule) for rule in job.rules)
         else:
             preemptible = is_p(job.rule.name)
+        self.logger.info(f"pre-emptible rules {preemptible}")
         return preemptible
 
     def get_command_writer(self, job):
