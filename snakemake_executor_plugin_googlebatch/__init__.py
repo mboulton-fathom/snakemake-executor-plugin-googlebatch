@@ -185,6 +185,23 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
+    entrypoint: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Entrypoint for the container image, if set",
+            "env_var": False,
+            "required": False,
+        },
+    )
+    commands: Optional[list[str]] = field(
+        default=None,
+        metadata={
+            "help": "commands for container image, if set",
+            "env_var": False,
+            "required": False,
+        },
+    )
+
     work_tasks_per_node: Optional[int] = field(
         default=1,
         metadata={
