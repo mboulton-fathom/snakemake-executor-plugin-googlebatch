@@ -11,6 +11,7 @@ from snakemake_interface_executor_plugins.executors.remote import RemoteExecutor
 from snakemake_interface_executor_plugins.jobs import (
     JobExecutorInterface,
 )
+from snakemake_interface_executor_plugins.utils import join_cli_args, format_cli_arg
 
 import snakemake_executor_plugin_googlebatch.command as cmdutil
 import snakemake_executor_plugin_googlebatch.utils as utils
@@ -92,6 +93,34 @@ class GoogleBatchExecutor(RemoteExecutor):
         """Generate a random jobid"""
         uid = str(uuid.uuid4())
         return self.fix_job_name(job.name) + "-" + uid[0:6]
+
+    def format_job_exec(self, job: JobExecutorInterface) -> str:
+        suffix = self.get_job_exec_suffix(job)
+        if suffix:
+            suffix = f"&& {suffix}"
+        general_args = self.workflow.spawned_job_args_factory.general_args(
+            executor_common_settings=self.common_settings
+        )
+
+        args = join_cli_args(
+            [
+                self.get_envvar_declarations(),
+                self.get_python_executable(),
+                "-m snakemake",
+                format_cli_arg("--snakefile", self.get_snakefile()),
+                self.get_job_args(job),
+                general_args,
+                self.additional_general_args(),
+                format_cli_arg("--mode", self.get_exec_mode().item_to_choice()),
+                format_cli_arg(
+                    "--local-groupid",
+                    self.workflow.group_settings.local_groupid,
+                    skip=self.job_specific_local_groupid,
+                ),
+                suffix,
+            ]
+        )
+        return args
 
     def get_container(self, job, entrypoint=None, commands=None):
         """Get a container, if batch-cos is defined."""
