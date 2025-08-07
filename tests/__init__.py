@@ -1,10 +1,10 @@
-from typing import Optional
+import os
 
 import snakemake.common.tests
 import snakemake.settings.types
-import os
-from snakemake_executor_plugin_googlebatch import ExecutorSettings
 from snakemake_interface_executor_plugins.settings import ExecutorSettingsBase
+
+from snakemake_executor_plugin_googlebatch import ExecutorSettings
 
 # from snakemake_interface_storage_plugins.settings import StorageProviderSettingsBase
 
@@ -13,7 +13,7 @@ class TestWorkflowsBase(snakemake.common.tests.TestWorkflowsMinioPlayStorageBase
     def get_executor(self) -> str:
         return "googlebatch"
 
-    def get_executor_settings(self) -> Optional[ExecutorSettingsBase]:
+    def get_executor_settings(self) -> ExecutorSettingsBase | None:
         # Allow custom one-off project/region from the environment
         project = os.environ.get("SNAKEMAKE_GOOGLEBATCH_PROJECT") or "snakemake-testing"
         region = os.environ.get("SNAKEMAKE_GOOGLEBATCH_REGION") or "us-central1"

@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 import argparse
-import time
 import os
 import sys
+import time
 
 from google.cloud import batch_v1, logging
 
@@ -43,9 +43,7 @@ def get_parser():
 
 
 def main():
-    """
-    Show logs for a job id.
-    """
+    """Show logs for a job id."""
     parser = get_parser()
     args, _ = parser.parse_known_args()
 
@@ -59,9 +57,6 @@ def main():
     if not args.jobid:
         sys.exit("A job id is required as the only positional argument.")
 
-    print(f"🌟️ Project: {project}")
-    print(f"🌟️ Region: {region}")
-    print(f"🌟️ Sleep: {args.sleep} seconds")
 
     # Create a client to get the job
     client = batch_v1.BatchServiceClient()
@@ -75,11 +70,10 @@ def main():
     # client only needs to be created once, and can be reused for multiple requests.
     log_client = logging.Client(project=project)
     logger = log_client.logger("batch_task_logs")
-    for log_entry in logger.list_entries(filter_=f"labels.job_uid={job.uid}"):
+    for _log_entry in logger.list_entries(filter_=f"labels.job_uid={job.uid}"):
         # Note that without the sleep you will exceed the wait limit
         # 60/minute, so we break with added buffer
         time.sleep(args.sleep)
-        print(log_entry.payload)
 
 
 if __name__ == "__main__":

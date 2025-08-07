@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
+import urllib3
 from snakemake_interface_executor_plugins.settings import (
     CommonSettings,
     ExecutorSettingsBase,
 )
+
 from .executor import GoogleBatchExecutor as Executor  # noqa
-import urllib3
 
 urllib3.disable_warnings()
 
@@ -19,7 +19,7 @@ urllib3.disable_warnings()
 # of None or anything else that makes sense in your case.
 @dataclass
 class ExecutorSettings(ExecutorSettingsBase):
-    project: Optional[str] = field(
+    project: str | None = field(
         default=None,
         metadata={
             "help": "The name of the Google Project.",
@@ -31,7 +31,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    region: Optional[str] = field(
+    region: str | None = field(
         default=None,
         metadata={
             "help": "The name of the Google Project region (e.g., us-central1)",
@@ -40,7 +40,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    container: Optional[str] = field(
+    container: str | None = field(
         default=None,
         metadata={
             "help": "A custom container for use with Google Batch COS",
@@ -49,7 +49,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    docker_password: Optional[str] = field(
+    docker_password: str | None = field(
         default=None,
         metadata={
             "help": "A docker registry password for COS if credentials are required",
@@ -58,7 +58,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    docker_username: Optional[str] = field(
+    docker_username: str | None = field(
         default=None,
         metadata={
             "help": "A docker registry username for COS if credentials are required",
@@ -68,7 +68,7 @@ class ExecutorSettings(ExecutorSettingsBase):
     )
 
     # mpitune configurations are validated on c2 and c2d instances only.
-    machine_type: Optional[str] = field(
+    machine_type: str | None = field(
         default="c2-standard-4",
         metadata={
             "help": "Google Cloud machine type or VM (mpitune on c2 and c2d family)",
@@ -77,7 +77,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    labels: Optional[str] = field(
+    labels: str | None = field(
         default="",
         metadata={
             "help": "Comma separated key value pairs to label job "
@@ -90,7 +90,7 @@ class ExecutorSettings(ExecutorSettingsBase):
     # This could also be batch-centos, batch-debian, batch-cos
     # For COS, family is batch-<os>-<version>-official, e.g.,
     # batch-debian-11-official
-    image_family: Optional[str] = field(
+    image_family: str | None = field(
         default="hpc-centos-7",
         metadata={
             "help": "Google Cloud image family (defaults to hpc-centos-7)",
@@ -100,7 +100,7 @@ class ExecutorSettings(ExecutorSettingsBase):
     )
 
     # for cos, should be batch-custom-image
-    image_project: Optional[str] = field(
+    image_project: str | None = field(
         default="cloud-hpc-image-public",
         metadata={
             "help": "Selected image project (defaults cloud-hpc-image-public)",
@@ -109,7 +109,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    work_tasks: Optional[int] = field(
+    work_tasks: int | None = field(
         default=1,
         metadata={
             "help": "The default number of work tasks (these are NOT MPI ranks)",
@@ -118,7 +118,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    cpu_milli: Optional[int] = field(
+    cpu_milli: int | None = field(
         default=1000,
         metadata={
             "help": "Milliseconds per cpu-second",
@@ -128,7 +128,7 @@ class ExecutorSettings(ExecutorSettingsBase):
     )
 
     # Note that additional disks can be added, but this is not exposed yet
-    boot_disk_gb: Optional[int] = field(
+    boot_disk_gb: int | None = field(
         default=None,
         metadata={
             "help": "Boot disk size (GB)",
@@ -137,7 +137,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    network: Optional[str] = field(
+    network: str | None = field(
         default=None,
         metadata={
             "help": "The URL of an existing network resource",
@@ -146,7 +146,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    subnetwork: Optional[str] = field(
+    subnetwork: str | None = field(
         default=None,
         metadata={
             "help": "The URL of an existing subnetwork resource",
@@ -155,7 +155,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    service_account: Optional[str] = field(
+    service_account: str | None = field(
         default=None,
         metadata={
             "help": "The email of a customer compute service account",
@@ -166,7 +166,7 @@ class ExecutorSettings(ExecutorSettingsBase):
 
     # local SSD uses type "local-ssd".
     # Also "pd-balanced", "pd-extreme", "pd-ssd", "pd-standard"
-    boot_disk_type: Optional[str] = field(
+    boot_disk_type: str | None = field(
         default=None,
         metadata={
             "help": "Boot disk type. (e.g., gcloud compute disk-types list)",
@@ -176,7 +176,7 @@ class ExecutorSettings(ExecutorSettingsBase):
     )
 
     # if not set, defaults to family
-    boot_disk_image: Optional[str] = field(
+    boot_disk_image: str | None = field(
         default=None,
         metadata={
             "help": "Boot disk image (e.g., batch-debian, bath-centos)",
@@ -185,7 +185,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    entrypoint: Optional[str] = field(
+    entrypoint: str | None = field(
         default=None,
         metadata={
             "help": "Entrypoint for the container image, if set",
@@ -193,7 +193,7 @@ class ExecutorSettings(ExecutorSettingsBase):
             "required": False,
         },
     )
-    commands: Optional[list[str]] = field(
+    commands: list[str] | None = field(
         default=None,
         metadata={
             "help": "commands for container image, if set",
@@ -202,7 +202,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    work_tasks_per_node: Optional[int] = field(
+    work_tasks_per_node: int | None = field(
         default=1,
         metadata={
             "help": "The default number of work tasks per node (NOT MPI ranks)",
@@ -211,7 +211,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    memory: Optional[int] = field(
+    memory: int | None = field(
         default=1000,
         metadata={
             "help": "Memory in MiB",
@@ -220,7 +220,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    mount_path: Optional[str] = field(
+    mount_path: str | None = field(
         default="/mnt/share",
         metadata={
             "help": "Mount path for Google bucket (if defined)",
@@ -229,7 +229,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    retry_count: Optional[int] = field(
+    retry_count: int | None = field(
         default=1,
         metadata={
             "help": "Retry count (default to 1)",
@@ -238,7 +238,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    max_run_duration: Optional[str] = field(
+    max_run_duration: str | None = field(
         default="3600s",
         metadata={
             "help": "Maximum run duration, string (e.g., 3600s)",
@@ -247,7 +247,7 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    snippets: Optional[str] = field(
+    snippets: str | None = field(
         default=None,
         metadata={
             "help": "One or more snippets to add to the Google Batch task setup",

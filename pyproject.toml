@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "snakemake-executor-plugin-googlebatch"
-version = "0.5.0"
+version = "0.6.0"
 description = "A Snakemake executor plugin for Google Batch."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,7 @@ classifiers=[
 ]
 dependencies = [
     "google-cloud-batch>=0.17.1,<0.18.0",
+    "snakemake>=9,<10",
     "requests>=2.31.0,<3.0.0",
     "google-api-core>=2.12.0,<3.0.0",
     "google-cloud-storage>=2.12.0,<3.0.0",
@@ -40,13 +41,9 @@ Documentation = "https://snakemake.github.io/snakemake-plugin-catalog/plugins/ex
 
 [project.optional-dependencies]
 dev = [
-    "black>=24.4.0,<25.0.0",
-    "flake8>=6.1.0,<7.0.0",
-    "coverage>=7.3.1,<8.0.0",
-    "pytest>=7.4.2,<8.0.0",
-    "snakemake>=8.30.0,<9.0.0",
-    "snakemake-storage-plugin-s3>=0.3.1,<0.4.0",
     "ruff",
+    "pytest>=7.4.2,<8.0.0",
+    "snakemake-storage-plugin-s3>=0.3.1,<0.4.0",
     "mypy",
     "uv",
 ]
@@ -76,7 +73,7 @@ target-version = "py311"
 ignore = [
     "E501", # line length
 ]
-select = ["D", "E", "F", "B", "W", "I", "S", "C4", "ICN", "T20", "PLE", "RUF", "UP"]
+select = ["E", "F", "B", "W", "I", "C4", "ICN", "T20", "PLE", "RUF", "UP"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
