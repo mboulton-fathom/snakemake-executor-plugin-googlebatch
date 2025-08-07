@@ -1,4 +1,5 @@
 import os
+import shlex
 import time
 import uuid
 
@@ -104,8 +105,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         # Default entrypoint assumes the setup wrote our command here
         if entrypoint is None:
             entrypoint = "/bin/bash"
-        if commands is None:
-            commands = ["true"]
+
+        commands = shlex.split(self.format_job_exec(job))
+        self.logger.debug(f"Executing job: {commands}")
 
         # We use the default snakemake image or the container, but also
         # honor a googlebatch_container in case it is distinct
