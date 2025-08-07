@@ -111,6 +111,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # honor a googlebatch_container in case it is distinct
         image = self.workflow.remote_execution_settings.container_image
         image = self.get_param(job, "container") or image
+
         if image != self.workflow.remote_execution_settings.container_image:
             self.logger.debug(f"Using custom container image {image}.")
         container = batch_v1.Runnable.Container()
@@ -219,6 +220,7 @@ class GoogleBatchExecutor(RemoteExecutor):
             self.get_param(job, "commands"),
         )
         if container is not None:
+            self.logger.info(f"container: {container}")
             runnable.container = container
             snakefile_text = writer.write_snakefile()
         else:
