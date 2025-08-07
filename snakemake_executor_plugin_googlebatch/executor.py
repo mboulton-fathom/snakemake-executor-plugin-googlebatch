@@ -105,7 +105,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         if entrypoint is None:
             entrypoint = "/bin/bash"
         if commands is None:
-            commands = ["/tmp/workdir/entrypoint.sh"]
+            commands = ["true"]
 
         # We use the default snakemake image or the container, but also
         # honor a googlebatch_container in case it is distinct
