@@ -231,7 +231,11 @@ class GoogleBatchExecutor(RemoteExecutor):
         runnable = batch_v1.Runnable()
 
         # If we have a container, add it - the script isn't used
-        container = self.get_container(job)
+        container = self.get_container(
+            job,
+            self.get_param(job, "entrypoint"),
+            self.get_param(job, "commands"),
+        )
         if container is not None:
             runnable.container = container
             snakefile_text = writer.write_snakefile()
