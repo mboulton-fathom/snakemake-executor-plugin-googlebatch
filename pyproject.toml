@@ -73,7 +73,7 @@ target-version = "py311"
 ignore = [
     "E501", # line length
 ]
-select = ["E", "F", "B", "W", "I", "C4", "ICN", "T20", "PLE", "RUF", "UP"]
+select = ["E", "F", "B", "W", "I", "C4", "ICN", "T20", "PLE", "RUF"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
