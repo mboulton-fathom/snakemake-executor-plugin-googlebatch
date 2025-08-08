@@ -152,7 +152,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # This will ensure the Snakefile is in the PWD of the COS container
         container.volumes = ["/tmp/workdir:/tmp/workdir"]
         container.options = (
-            "--network host --workdir /tmp/workdir -e PYTHONUNBUFFERED=1"
+            "--network host --user 0 --workdir /tmp/workdir -e PYTHONUNBUFFERED=1"
         )
 
         username = self.get_param(job, "docker_username")
@@ -189,7 +189,8 @@ class GoogleBatchExecutor(RemoteExecutor):
     def get_command_writer(self, job):
         """Get a command writer for a job."""
         family = self.get_param(job, "image_family")
-        self.logger.debug(f"Using command writer for family: {family}")
+        writer = cmdutil.get_writer(family)
+        self.logger.debug(f"Using command writer {writer} for family: {family}")
         command = self.format_job_exec(job)
         snakefile = self.read_snakefile()
 
@@ -199,7 +200,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         snakefile_path = "./Snakefile"
         if "batch-cos" in family:
             snakefile_path = "/tmp/workdir/Snakefile"
-        return cmdutil.get_writer(family)(
+        return writer(
             command=command,
             snakefile=snakefile,
             snippets=snippets,
