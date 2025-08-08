@@ -145,7 +145,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         if entrypoint is None:
             entrypoint = "/bin/bash"
 
-        commands = shlex.split(self.format_job_exec(job))
+        commands = self.format_job_exec(job)
         self.logger.debug(f"Executing job: {commands}")
 
         # We use the default snakemake image or the container, but also
@@ -160,7 +160,7 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         # This is written by writer.setup() for COS
         container.entrypoint = entrypoint
-        container.commands = commands
+        container.commands = [commands]
 
         # This will ensure the Snakefile is in the PWD of the COS container
         container.volumes = ["/tmp/workdir:/tmp/workdir"]
