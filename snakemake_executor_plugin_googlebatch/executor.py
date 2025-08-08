@@ -105,7 +105,7 @@ class GoogleBatchExecutor(RemoteExecutor):
                 self.get_envvar_declarations(),
                 self.get_python_executable(),
                 "-m snakemake",
-                format_cli_arg("--snakefile", self.get_snakefile()),
+                format_cli_arg("--snakefile", self.get_snakefile(job)),
                 self.get_job_args(job),
                 general_args,
                 self.additional_general_args(),
@@ -486,8 +486,19 @@ class GoogleBatchExecutor(RemoteExecutor):
         assert os.path.exists(self.workflow.main_snakefile)
         return utils.read_file(self.workflow.main_snakefile)
 
-    def get_snakefile(self):
+    def get_snakefile(self, job: JobExecutorInterface | None = None):
         """Use a Snakefile in the present working directory since we write it."""
+
+        if job:
+            family = self.get_param(job, "image_family")
+            self.logger.debug(f"Using command writer for family: {family}")
+
+            snakefile_path = "./Snakefile"
+            if "batch-cos" in family:
+                snakefile_path = "/tmp/workdir/Snakefile"
+
+            return snakefile_path
+
         assert os.path.exists(self.workflow.main_snakefile)
         return os.path.relpath(self.workflow.main_snakefile, os.getcwd())
 
