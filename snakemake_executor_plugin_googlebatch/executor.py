@@ -95,9 +95,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         return self.fix_job_name(job.name) + "-" + uid[0:6]
 
     def format_job_exec(self, job: JobExecutorInterface) -> str:
-        suffix = self.get_job_exec_suffix(job)
-        if suffix:
-            suffix = f"&& {suffix}"
+        """Overrides RealExecutor.format_job_exec removing unwanted args"""
         general_args = self.workflow.spawned_job_args_factory.general_args(
             executor_common_settings=self.common_settings
         )
@@ -117,7 +115,6 @@ class GoogleBatchExecutor(RemoteExecutor):
                     self.workflow.group_settings.local_groupid,
                     skip=self.job_specific_local_groupid,
                 ),
-                suffix,
             ]
         )
         return args
