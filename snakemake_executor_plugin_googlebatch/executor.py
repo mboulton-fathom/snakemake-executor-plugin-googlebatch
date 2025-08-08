@@ -1,5 +1,4 @@
 import os
-import shlex
 import time
 import uuid
 
@@ -11,7 +10,7 @@ from snakemake_interface_executor_plugins.executors.remote import RemoteExecutor
 from snakemake_interface_executor_plugins.jobs import (
     JobExecutorInterface,
 )
-from snakemake_interface_executor_plugins.utils import join_cli_args, format_cli_arg
+from snakemake_interface_executor_plugins.utils import format_cli_arg, join_cli_args
 
 import snakemake_executor_plugin_googlebatch.command as cmdutil
 import snakemake_executor_plugin_googlebatch.utils as utils

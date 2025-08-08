@@ -57,7 +57,6 @@ def main():
     if not args.jobid:
         sys.exit("A job id is required as the only positional argument.")
 
-
     # Create a client to get the job
     client = batch_v1.BatchServiceClient()
     name = f"projects/{project}/locations/{region}/jobs/{args.jobid}"
