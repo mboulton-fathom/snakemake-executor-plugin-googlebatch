@@ -13,7 +13,7 @@ class TestWorkflowsBase(snakemake.common.tests.TestWorkflowsMinioPlayStorageBase
     def get_executor(self) -> str:
         return "googlebatch"
 
-    def get_executor_settings(self) -> Optional[ExecutorSettingsBase]:
+    def get_executor_settings(self) -> ExecutorSettingsBase:
         # Allow custom one-off project/region from the environment
         project = os.environ.get("SNAKEMAKE_GOOGLEBATCH_PROJECT") or "snakemake-testing"
         region = os.environ.get("SNAKEMAKE_GOOGLEBATCH_REGION") or "us-central1"
