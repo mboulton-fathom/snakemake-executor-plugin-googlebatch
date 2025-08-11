@@ -508,13 +508,9 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         if job:
             family = self.get_param(job, "image_family")
-            self.logger.debug(f"Using command writer for family: {family}")
 
-            snakefile_path = "./Snakefile"
             if "batch-cos" in family:
-                snakefile_path = "/tmp/workdir/Snakefile"
-
-            return snakefile_path
+                return  "/tmp/workdir/Snakefile"
 
         assert os.path.exists(self.workflow.main_snakefile)
         return os.path.relpath(self.workflow.main_snakefile, os.getcwd())
