@@ -189,15 +189,23 @@ class ExecutorSettings(ExecutorSettingsBase):
     entrypoint: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Entrypoint for the container image, if set",
+            "help": "Entrypoint for the container image",
             "env_var": False,
             "required": False,
         },
     )
-    commands: Optional[list[str]] = field(
+    commands: Optional[str] = field(
         default=None,
         metadata={
-            "help": "commands for container image, if set",
+            "help": "commands for container image. Also see split_commands",
+            "env_var": False,
+            "required": False,
+        },
+    )
+    split_commands: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "if True, split 'commands' using shlex.split and pass as an array to the google batch container. Otherwise, pass the 'commands' as one big string.",
             "env_var": False,
             "required": False,
         },

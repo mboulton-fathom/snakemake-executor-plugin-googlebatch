@@ -1,4 +1,5 @@
 import os
+import shlex
 import time
 import uuid
 
@@ -159,7 +160,10 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         # This is written by writer.setup() for COS
         container.entrypoint = entrypoint
-        container.commands = [commands]
+        if self.get_param(job, "split_commands"):
+            container.commands = shlex.split(commands)
+        else:
+            container.commands = [commands]
 
         # This will ensure the Snakefile is in the PWD of the COS container
         container.volumes = ["/tmp/workdir:/tmp/workdir"]
