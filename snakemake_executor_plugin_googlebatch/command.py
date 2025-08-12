@@ -43,6 +43,14 @@ sudo yum install -y wget bzip2 ca-certificates gnupg2 squashfs-tools git singula
 """
 )
 
+snakemake_centos_install_container = (
+    snakemake_base_environment
+    + """
+sudo yum update -y
+sudo yum install -y ca-certificates git singularity-ce
+"""
+)
+
 snakemake_debian_install = (
     snakemake_base_environment
     + """
@@ -186,7 +194,11 @@ class CentosWriter(CommandWriter):
     """A custom writer for a centos-based family."""
 
     def setup(self, use_container: bool = False):
-        return self._template_setup(snakemake_centos_install, use_container)
+        if use_container:
+            centos_install = snakemake_centos_install_container
+        else:
+            centos_install = snakemake_centos_install
+        return self._template_setup(centos_install, use_container)
 
 
 def get_writer(family):
