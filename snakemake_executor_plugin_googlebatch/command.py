@@ -39,7 +39,7 @@ snakemake_centos_install = (
     snakemake_base_environment
     + """
 sudo yum update -y
-sudo yum install -y wget bzip2 ca-certificates gnupg2 squashfs-tools git singularity
+sudo yum install -y wget bzip2 ca-certificates gnupg2 squashfs-tools git singularity-ce
 """
 )
 
