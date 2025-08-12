@@ -95,7 +95,13 @@ class GoogleBatchExecutor(RemoteExecutor):
         return self.fix_job_name(job.name) + "-" + uid[0:6]
 
     def format_job_exec(self, job: JobExecutorInterface) -> str:
-        """Overrides RealExecutor.format_job_exec removing unwanted args"""
+        """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
+
+        family = self.get_param(job, "image_family")
+        if "batch-cos" not in family:
+            # Use the normal one
+            return super().format_job_exec(job)
+
         suffix = self.get_job_exec_suffix(job)
         if suffix:
             suffix = f"&& {suffix}"
