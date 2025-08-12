@@ -186,6 +186,14 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
+    singularity_container: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": "If set, use the 'container' specified on the job to run as a ysingularity container to run everything inside of like `singularity run <image> <args...>`",
+            "env_var": False,
+            "required": False,
+        },
+    )
     entrypoint: Optional[str] = field(
         default=None,
         metadata={
@@ -194,18 +202,10 @@ class ExecutorSettings(ExecutorSettingsBase):
             "required": False,
         },
     )
-    commands: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "commands for container image. Also see split_commands",
-            "env_var": False,
-            "required": False,
-        },
-    )
     split_commands: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "if True, split 'commands' using shlex.split and pass as an array to the google batch container. Otherwise, pass the 'commands' as one big string.",
+            "help": "if True, split job commands using shlex.split and pass as an array to the google batch container. Otherwise, pass the 'commands' as one big string. This depends on how the container entrypoint is set up.",
             "env_var": False,
             "required": False,
         },

@@ -39,7 +39,7 @@ snakemake_centos_install = (
     snakemake_base_environment
     + """
 sudo yum update -y
-sudo yum install -y wget bzip2 ca-certificates gnupg2 squashfs-tools git
+sudo yum install -y wget bzip2 ca-certificates gnupg2 squashfs-tools git singularity
 """
 )
 
@@ -139,7 +139,7 @@ class CommandWriter:
             return command
         return command + "\n" + self.command
 
-    def setup(self):
+    def setup(self, use_container: bool = False):
         """Derive the correct setup command based on the family."""
         pass
 
@@ -166,7 +166,7 @@ class CommandWriter:
 class COSWriter(CommandWriter):
     """A custom writer for a cos-based family."""
 
-    def setup(self):
+    def setup(self, use_container: bool = False):
         """Setup for the container operating system means writing
         the entrypoint. We do not use any snippets here, using
         a container assumes what the user needs is in the
@@ -178,15 +178,15 @@ class COSWriter(CommandWriter):
 class DebianWriter(CommandWriter):
     """A custom writer for a debian-based family."""
 
-    def setup(self):
-        return self._template_setup(snakemake_debian_install)
+    def setup(self, use_container: bool = False):
+        return self._template_setup(snakemake_debian_install, use_container)
 
 
 class CentosWriter(CommandWriter):
     """A custom writer for a centos-based family."""
 
-    def setup(self):
-        return self._template_setup(snakemake_centos_install)
+    def setup(self, use_container: bool = False):
+        return self._template_setup(snakemake_centos_install, use_container)
 
 
 def get_writer(family):

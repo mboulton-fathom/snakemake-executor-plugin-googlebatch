@@ -1,6 +1,7 @@
 import os
 import shlex
 import time
+import typing
 import uuid
 
 from google.api_core.exceptions import DeadlineExceeded, ResourceExhausted
@@ -29,7 +30,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         except Exception as e:
             raise WorkflowError("Unable to connect to Google Batch.", e)
 
-    def get_param(self, job, param):
+    def get_param(self, job, param) -> typing.Any:
         """Simple courtesy function to get a job resource and fall back to defaults.
 
         1. First preference goes to googlebatch_ directive in step
@@ -97,9 +98,12 @@ class GoogleBatchExecutor(RemoteExecutor):
     def format_job_exec(self, job: JobExecutorInterface) -> str:
         """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
 
-        if not self.is_container_job(job):
+        if not (self.is_container_job(job) or self.is_singularity_job(job)):
             # Use the normal one
+            self.logger.info("using default job exec")
             return super().format_job_exec(job)
+
+        self.logger.info("using container-specific job exec")
 
         suffix = self.get_job_exec_suffix(job)
         if suffix:
@@ -137,11 +141,11 @@ class GoogleBatchExecutor(RemoteExecutor):
         )
         return args
 
-    def get_container(self, job, entrypoint=None, commands=None):
+    def get_container(self, job, entrypoint=None):
         """Get a container, if batch-cos is defined."""
         if not self.is_container_job(job):
             self.logger.info("Not using a container for this job.")
-            return
+            return None
 
         self.logger.info("Using a container for this job.")
 
@@ -198,6 +202,11 @@ class GoogleBatchExecutor(RemoteExecutor):
         family = self.get_param(job, "image_family")
         return "batch-cos" in family
 
+    def is_singularity_job(self, job: JobExecutorInterface) -> bool:
+        """Determine if a job is a container job based on image family."""
+        singularity_container = self.get_param(job, "singularity_container")
+        return bool(singularity_container)
+
     def is_preemptible(self, job):
         """Determine if a job is preemptible.
 
@@ -208,7 +217,7 @@ class GoogleBatchExecutor(RemoteExecutor):
             preemptible = all(is_p(rule) for rule in job.rules)
         else:
             preemptible = is_p(job.rule.name)
-        self.logger.info(f"pre-emptible rules {preemptible}")
+        self.logger.info(f"Is this job pre-emptible: {preemptible}")
         return preemptible
 
     def get_command_writer(self, job):
@@ -225,6 +234,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         snakefile_path = "./Snakefile"
         if self.is_container_job(job):
             snakefile_path = "/tmp/workdir/Snakefile"
+
         return writer(
             command=command,
             snakefile=snakefile,
@@ -256,9 +266,13 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         # The command writer prepares the final command, snippets, etc.
         writer = self.get_command_writer(job)
+        self.logger.info(f"using writer: {type(writer)}")
+
+        use_container = self.get_container(job, self.get_param(job, "entrypoint"))
+        use_singularity = self.get_param(job, "singularity_container")
 
         # Setup command
-        setup_command = writer.setup()
+        setup_command = writer.setup(use_container or use_singularity)
         self.logger.info("\n🌟️ Setup Command:")
 
         # Add environment variables to the task
@@ -268,14 +282,22 @@ class GoogleBatchExecutor(RemoteExecutor):
         runnable = batch_v1.Runnable()
 
         # If we have a container, add it - the script isn't used
-        container = self.get_container(
-            job,
-            self.get_param(job, "entrypoint"),
-            self.get_param(job, "commands"),
-        )
-        if container is not None:
-            self.logger.info(f"container: {container}")
-            runnable.container = container
+        if use_container:
+            self.logger.info(f"container: {use_container}")
+            runnable.container = use_container
+            snakefile_text = writer.write_snakefile()
+        elif use_singularity:
+            singularity_image = self.workflow.remote_execution_settings.container_image
+            if not singularity_image:
+                raise Exception(
+                    "specified 'singularity_container' but no container was specified on the step"
+                )
+            # Run command (not used for COS)
+            run_command = writer.run()
+            self.logger.info("\n🐍️ Snakemake Command:")
+
+            runnable.script = batch_v1.Runnable.Script()
+            runnable.script.text = f"singularity run {singularity_image} {run_command}"
             snakefile_text = writer.write_snakefile()
         else:
             # Run command (not used for COS)
