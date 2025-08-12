@@ -97,8 +97,7 @@ class GoogleBatchExecutor(RemoteExecutor):
     def format_job_exec(self, job: JobExecutorInterface) -> str:
         """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
 
-        family = self.get_param(job, "image_family")
-        if "batch-cos" not in family:
+        if not self.is_container_job(job):
             # Use the normal one
             return super().format_job_exec(job)
 
@@ -140,8 +139,7 @@ class GoogleBatchExecutor(RemoteExecutor):
 
     def get_container(self, job, entrypoint=None, commands=None):
         """Get a container, if batch-cos is defined."""
-        family = self.get_param(job, "image_family")
-        if "batch-cos" not in family:
+        if not self.is_container_job(job):
             self.logger.info("Not using a container for this job.")
             return
 
@@ -195,6 +193,11 @@ class GoogleBatchExecutor(RemoteExecutor):
         # enable_image_streaming true
         return container
 
+    def is_container_job(self, job: JobExecutorInterface) -> bool:
+        """Determine if a job is a container job based on image family."""
+        family = self.get_param(job, "image_family")
+        return "batch-cos" in family
+
     def is_preemptible(self, job):
         """Determine if a job is preemptible.
 
@@ -220,7 +223,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         snippets = self.get_param(job, "snippets")
 
         snakefile_path = "./Snakefile"
-        if "batch-cos" in family:
+        if self.is_container_job(job):
             snakefile_path = "/tmp/workdir/Snakefile"
         return writer(
             command=command,
@@ -512,11 +515,8 @@ class GoogleBatchExecutor(RemoteExecutor):
     def get_snakefile(self, job: JobExecutorInterface | None = None):
         """Use a Snakefile in the present working directory since we write it."""
 
-        if job:
-            family = self.get_param(job, "image_family")
-
-            if "batch-cos" in family:
-                return  "/tmp/workdir/Snakefile"
+        if job and self.is_container_job(job):
+            return "/tmp/workdir/Snakefile"
 
         assert os.path.exists(self.workflow.main_snakefile)
         return os.path.relpath(self.workflow.main_snakefile, os.getcwd())
