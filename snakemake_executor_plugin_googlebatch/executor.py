@@ -329,7 +329,17 @@ class GoogleBatchExecutor(RemoteExecutor):
         barrier = batch_v1.Runnable()
         barrier.barrier = batch_v1.Runnable.Barrier()
         barrier.barrier.name = "wait-for-setup"
-        task.runnables = [setup, snakefile_step, barrier, runnable]
+        task.runnables = [setup, snakefile_step]
+        if use_singularity:
+            # gcloud auth for singularity
+            gcloud_auth_step = batch_v1.Runnable()
+            gcloud_auth_step.script = batch_v1.Runnable.Script()
+            gcloud_auth_step.script.text = (
+                "gcloud auth configure-docker europe-docker.pkg.dev"
+            )
+            task.runnables.append(gcloud_auth_step)
+
+        task.runnables.extend([barrier, runnable])
 
         # Are we adding storage?
         self.add_storage(job, task)
