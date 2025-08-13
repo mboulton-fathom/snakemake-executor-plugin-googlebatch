@@ -194,6 +194,14 @@ class ExecutorSettings(ExecutorSettingsBase):
             "required": False,
         },
     )
+    singularity_protocol: str = field(
+        default="oras://",
+        metadata={
+            "help": "protocol that singularity will use with the container",
+            "env_var": False,
+            "required": False,
+        },
+    )
     entrypoint: Optional[str] = field(
         default=None,
         metadata={

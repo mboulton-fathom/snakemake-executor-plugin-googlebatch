@@ -297,7 +297,7 @@ class GoogleBatchExecutor(RemoteExecutor):
             self.logger.info("\n🐍️ Snakemake Command:")
 
             runnable.script = batch_v1.Runnable.Script()
-            runnable.script.text = f"singularity run {singularity_image} {run_command}"
+            runnable.script.text = f"singularity run {self.get_param(job, 'singularity_protocol')}{singularity_image} {run_command}"
             snakefile_text = writer.write_snakefile()
         else:
             # Run command (not used for COS)
