@@ -1,7 +1,6 @@
 import os
 import shlex
 import time
-import typing
 import uuid
 
 from google.api_core.exceptions import DeadlineExceeded, ResourceExhausted
@@ -28,7 +27,7 @@ class GoogleBatchExecutor(RemoteExecutor):
             self.batch = batch_v1.BatchServiceClient()
             self.logger.info("Successfully connected to Google Batch.")
         except Exception as e:
-            raise WorkflowError("Unable to connect to Google Batch.", e)
+            raise WorkflowError("Unable to connect to Google Batch.") from e
 
     def get_param(self, job, param):
         """
