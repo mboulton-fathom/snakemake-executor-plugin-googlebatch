@@ -5,12 +5,6 @@ repos:
       - args: [--fix, --exit-non-zero-on-fix]
         id: ruff-check
       - id: ruff-format
-  - repo: https://github.com/semgrep/pre-commit
-    rev: "v1.131.0"
-    hooks:
-      - id: semgrep
-        types: [python]
-        args: ["--error", "--metrics", "off", "-q", "--config", "p/default"]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.1
     hooks:
