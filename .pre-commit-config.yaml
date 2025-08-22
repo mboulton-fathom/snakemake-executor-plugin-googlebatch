@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: semgrep
         types: [python]
-        args: ["--error", "--metrics", "off", "-q", "-l", "python"]
+        args: ["--error", "--metrics", "off", "-q", "--config", "p/default"]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.1
     hooks:
