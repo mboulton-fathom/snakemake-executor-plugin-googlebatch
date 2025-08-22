@@ -2,14 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Pytest",
-            "type": "python",
+            "name": "Python: Debug Tests",
+            "type": "debugpy",
+            "python": "${command:python.interpreterPath}",
             "request": "launch",
-            "module": "pytest",
-            "args": [
-                "tests/"
+            "program": "${file}",
+            "purpose": [
+                "debug-test"
             ],
-            "justMyCode": true
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
