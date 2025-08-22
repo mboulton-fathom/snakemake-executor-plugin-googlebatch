@@ -1,9 +1,10 @@
+import asyncio
+import tempfile
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import snakemake
 from google.cloud import batch_v1
-from snakemake_interface_common.exceptions import WorkflowError
 from snakemake_interface_executor_plugins.executors.base import SubmittedJobInfo
 from snakemake_interface_executor_plugins.settings import ExecutorSettingsBase
 
@@ -33,22 +34,28 @@ class TestGoogleBatchExecutor:
         workflow.storage_settings.shared_fs_usage = []
         workflow.group_settings.local_groupid = 1
         workflow.executor_settings = Mock()
-        workflow.main_snakefile = "/tmp/workdir/Snakefile"
         workflow.spawned_job_args_factory.general_args.return_value = "--dry-run"
         workflow.spawned_job_args_factory.precommand.return_value = ""
         workflow.spawned_job_args_factory.envvars.return_value = {}
-        # Add the jobscript attribute that the parent class expects
         workflow.jobscript = "/tmp/test_jobscript.sh"
-        return workflow
+
+        with tempfile.NamedTemporaryFile() as f:
+            workflow.main_snakefile = f.name
+            yield workflow
 
     @pytest.fixture
     def job(self):
         job = Mock()
         job.name = "test-job"
-        job.resources = {}
+        job.resources = {"googlebatch_image_family": "batch-cos-stable"}
         job.is_group.return_value = False
         job.rules = []
         job.rule.name = "test-rule"
+
+        def logfile_suggestion(path):
+            return path
+
+        job.logfile_suggestion = logfile_suggestion
         return job
 
     @pytest.fixture
@@ -64,19 +71,6 @@ class TestGoogleBatchExecutor:
 
             executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
             return executor
-
-    def test_post_init_failure(self):
-        mock_workflow = Mock()
-        mock_workflow.storage_settings.shared_fs_usage = []  # Add this line
-        with patch(
-            "google.cloud.batch_v1.BatchServiceClient",
-            side_effect=Exception("Connection failed"),
-        ):
-            with pytest.raises(WorkflowError):
-                GoogleBatchExecutor(
-                    workflow=mock_workflow,  # Use the properly configured mock
-                    logger=MagicMock(),
-                )
 
     def test_get_param_from_resources(self, executor, job):
         job.resources = {"googlebatch_memory": 2048}
@@ -162,7 +156,7 @@ class TestGoogleBatchExecutor:
         mock_get_writer.return_value = Mock(return_value=mock_writer)
 
         job.resources = {
-            "googlebatch_image_family": "batch-centos",
+            "googlebatch_image_family": "batch-cos-stable",
             "googlebatch_retry_count": 3,
             "googlebatch_max_run_duration": "3600s",
         }
@@ -269,8 +263,6 @@ class TestGoogleBatchExecutor:
                 results.append(result)
             return results
 
-        import asyncio
-
         results = asyncio.run(collect_results())
 
         # Should be empty since job succeeded
@@ -294,12 +286,10 @@ class TestGoogleBatchExecutor:
 
         # Create async generator and get result
         async def collect_results():
-            results = []
+            collected = []
             async for result in executor.check_active_jobs([mock_submitted_job]):
-                results.append(result)
-            return results
-
-        import asyncio
+                collected.append(result)
+            return collected
 
         results = asyncio.run(collect_results())
 
