@@ -94,7 +94,8 @@ which snakemake || whereis snakemake
 
 
 class CommandWriter:
-    """A command writer knows how to write a Snakemake command
+    """
+    A command writer knows how to write a Snakemake command
 
     This is intended for Google Batch operating systems.
     """
@@ -120,7 +121,8 @@ class CommandWriter:
         self.load_snippets(snippets)
 
     def load_snippets(self, spec):
-        """Given a spec, load into snippets for the job (setup and run)
+        """
+        Given a spec, load into snippets for the job (setup and run)
 
         We also validate here (early on) to exit early if needed
         """
@@ -129,7 +131,8 @@ class CommandWriter:
         self.snippets.validate()
 
     def run(self):
-        """Write the command script. This is likely shared.
+        """
+        Write the command script. This is likely shared.
 
         We allow one or more pre-commands (e.g., to download artifacts)
         """
@@ -147,18 +150,23 @@ class CommandWriter:
             return command
         return command + "\n" + self.command
 
-    def setup(self, use_container: bool = False):
-        """Derive the correct setup command based on the family."""
+    def setup(self):
+        """
+        Derive the correct setup command based on the family.
+        """
         pass
 
     def write_snakefile(self):
-        """Return tempalted snakefile. We do this in a separate step so
+        """
+        Return tempalted snakefile. We do this in a separate step so
         a later container step can use it.
         """
         return write_snakefile % (self.snakefile_path, self.snakefile)
 
     def _template_setup(self, template, use_container=False):
-        """Shared logic to template the setup command."""
+        """
+        Shared logic to template the setup command.
+        """
         command = template
 
         # If we have a snippet group, add snippets before installing snakemake
@@ -172,10 +180,13 @@ class CommandWriter:
 
 
 class COSWriter(CommandWriter):
-    """A custom writer for a cos-based family."""
+    """
+    A custom writer for a cos-based family.
+    """
 
-    def setup(self, use_container: bool = False):
-        """Setup for the container operating system means writing
+    def setup(self):
+        """
+        Setup for the container operating system means writing
         the entrypoint. We do not use any snippets here, using
         a container assumes what the user needs is in the
         container.
@@ -184,14 +195,18 @@ class COSWriter(CommandWriter):
 
 
 class DebianWriter(CommandWriter):
-    """A custom writer for a debian-based family."""
+    """
+    A custom writer for a debian-based family.
+    """
 
     def setup(self, use_container: bool = False):
         return self._template_setup(snakemake_debian_install, use_container)
 
 
 class CentosWriter(CommandWriter):
-    """A custom writer for a centos-based family."""
+    """
+    A custom writer for a centos-based family.
+    """
 
     def setup(self, use_container: bool = False):
         if use_container:
@@ -202,7 +217,9 @@ class CentosWriter(CommandWriter):
 
 
 def get_writer(family):
-    """Instantiate a writer based on a family."""
+    """
+    Instantiate a writer based on a family.
+    """
     # https://cloud.google.com/batch/docs/view-os-images
     if "batch-cos" in family:
         return COSWriter

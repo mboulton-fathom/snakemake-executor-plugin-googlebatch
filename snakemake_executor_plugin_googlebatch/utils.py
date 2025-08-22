@@ -3,7 +3,8 @@ from requests.exceptions import ReadTimeout
 
 
 def google_cloud_retry(ex):
-    """Retry a Google Cloud request.
+    """
+    Retry a Google Cloud request.
 
     Given an exception from Google Cloud, determine if it's one in the
     listing of transient errors (determined by function
@@ -15,7 +16,6 @@ def google_cloud_retry(ex):
     Arguments:
       ex (Exception) : the exception passed from the decorated function
     Returns: boolean to indicate doing retry (True) or not (False)
-
     """
     # Most likely case is Google API transient error.
     if retry.if_transient_error(ex):
@@ -28,7 +28,8 @@ def google_cloud_retry(ex):
 
 
 def bytesto(bytes, to, bsize=1024):
-    """Convert bytes to megabytes.
+    """
+    Convert bytes to megabytes.
 
     bytes to mb: bytesto(bytes, 'm')
     bytes to gb: bytesto(bytes, 'g' etc.
@@ -42,7 +43,9 @@ def bytesto(bytes, to, bsize=1024):
 
 
 def read_file(filename):
-    """Read a file from the local system."""
-    with open(filename) as fd:
+    """
+    Read a file from the local system.
+    """
+    with open(filename, "r") as fd:
         content = fd.read()
     return content

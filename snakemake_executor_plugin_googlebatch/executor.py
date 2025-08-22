@@ -30,8 +30,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         except Exception as e:
             raise WorkflowError("Unable to connect to Google Batch.", e)
 
-    def get_param(self, job, param) -> typing.Any:
-        """Simple courtesy function to get a job resource and fall back to defaults.
+    def get_param(self, job, param):
+        """
+        Simple courtesy function to get a job resource and fall back to defaults.
 
         1. First preference goes to googlebatch_ directive in step
         2. Second preference goes to command line flag
@@ -42,7 +43,8 @@ class GoogleBatchExecutor(RemoteExecutor):
         )
 
     def get_task_resources(self, job):
-        """Get task compute resources.
+        """
+        Get task compute resources.
 
         CPU Milli are milliseconds per cpu-second.
         These are the requirement % of a single CPUs.
@@ -56,7 +58,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return resources
 
     def get_labels(self, job):
-        """Derive default labels for the job (and add custom)"""
+        """
+        Derive default labels for the job (and add custom)
+        """
         labels = {"snakemake-job": self.fix_job_name(job.name)}
         for contender in self.get_param(job, "labels").split(","):
             if not contender:
@@ -70,11 +74,15 @@ class GoogleBatchExecutor(RemoteExecutor):
         return labels
 
     def get_envvar_declarations(self):
-        """This is just added as a workaround while there is a bug with real.py"""
+        """
+        This is just added as a workaround while there is a bug with real.py
+        """
         return {}
 
     def add_storage(self, job, task):
-        """Add storage for a task, which requires a bucket and mount path."""
+        """
+        Add storage for a task, which requires a bucket and mount path.
+        """
         bucket = self.get_param(job, "bucket")
         if not bucket:
             self.logger.debug("No bucket provided, skipping storage.")
@@ -91,7 +99,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         task.volumes = [gcs_volume]
 
     def generate_jobid(self, job):
-        """Generate a random jobid"""
+        """
+        Generate a random jobid
+        """
         uid = str(uuid.uuid4())
         return self.fix_job_name(job.name) + "-" + uid[0:6]
 
@@ -142,7 +152,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return args
 
     def get_container(self, job, entrypoint=None):
-        """Get a container, if batch-cos is defined."""
+        """
+        Get a container, if batch-cos is defined.
+        """
         if not self.is_container_job(job):
             self.logger.info("Not using a container for this job.")
             return None
@@ -208,7 +220,8 @@ class GoogleBatchExecutor(RemoteExecutor):
         return bool(singularity_container)
 
     def is_preemptible(self, job):
-        """Determine if a job is preemptible.
+        """
+        Determine if a job is preemptible.
 
         The logic for determining if the set is valid should belong upstream.
         """
@@ -221,7 +234,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return preemptible
 
     def get_command_writer(self, job):
-        """Get a command writer for a job."""
+        """
+        Get a command writer for a job.
+        """
         family = self.get_param(job, "image_family")
         writer = cmdutil.get_writer(family)
         self.logger.debug(f"Using command writer {writer} for family: {family}")
@@ -245,13 +260,15 @@ class GoogleBatchExecutor(RemoteExecutor):
         )
 
     def fix_job_name(self, name):
-        """Replace illegal symbols and fix the job name length to adhere to
+        """
+        Replace illegal symbols and fix the job name length to adhere to
         the Google Batch API job ID and label naming restrictions
         """
         return name.replace("_", "-").replace(".", "")[:50]
 
     def run_job(self, job: JobExecutorInterface):
-        """Run the Google Batch job.
+        """
+        Run the Google Batch job.
 
         This involves creating one or more runnables that are packaged in
         a task, and the task is put into a group that is associated with a job.
@@ -396,13 +413,16 @@ class GoogleBatchExecutor(RemoteExecutor):
         )
 
     def project_parent(self, job):
-        """The job's parent is the region in which the job will run."""
+        """
+        The job's parent is the region in which the job will run.
+        """
         project_id = self.get_param(job, "project")
         region = self.get_param(job, "region")
         return f"projects/{project_id}/locations/{region}"
 
     def get_allocation_policy(self, job):
-        """Get allocation policy for a job. This includes:
+        """
+        Get allocation policy for a job. This includes:
 
         An allocation policy.
         A boot disk attached to the allocation policy.
@@ -464,7 +484,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return allocation_policy
 
     def get_network_policy(self, job):
-        """Given a job request, get the network policy"""
+        """
+        Given a job request, get the network policy
+        """
         network = self.get_param(job, "network")
         subnetwork = self.get_param(job, "subnetwork")
         if all(x is None for x in [network, subnetwork]):
@@ -480,7 +502,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return policy
 
     def get_service_account(self, job: JobExecutorInterface) -> batch_v1.ServiceAccount:
-        """Givena job request, get the service account"""
+        """
+        Givena job request, get the service account
+        """
         service_account_email = self.get_param(job, "service_account")
         service_account = batch_v1.ServiceAccount()
         if service_account_email is not None:
@@ -488,7 +512,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return service_account
 
     def get_boot_disk(self, job):
-        """Given a job request, add a customized boot disk."""
+        """
+        Given a job request, add a customized boot disk.
+        """
         # Reference disk, boot disk type, and size
         image = self.get_param(job, "boot_disk_image")
         size = self.get_param(job, "boot_disk_gb")
@@ -508,7 +534,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return boot_disk
 
     def get_accelerators(self, job):
-        """Given a job request, add accelerators (count and type) to it."""
+        """
+        Given a job request, add accelerators (count and type) to it.
+        """
         gpu = job.resources.get("nvidia_gpu")
         accelerators = []
 
@@ -537,7 +565,8 @@ class GoogleBatchExecutor(RemoteExecutor):
         return accelerators
 
     def read_snakefile(self):
-        """Get the content of the Snakefile to write to the worker.
+        """
+        Get the content of the Snakefile to write to the worker.
 
         This might need to be improved to support storage, etc.
         """
@@ -545,8 +574,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return utils.read_file(self.workflow.main_snakefile)
 
     def get_snakefile(self, job: JobExecutorInterface | None = None):
-        """Use a Snakefile in the present working directory since we write it."""
-
+        """
+        Use a Snakefile in the present working directory since we write it.
+        """
         if job and self.is_container_job(job):
             return "/tmp/workdir/Snakefile"
 
@@ -554,7 +584,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         return os.path.relpath(self.workflow.main_snakefile, os.getcwd())
 
     async def check_active_jobs(self, active_jobs: list[SubmittedJobInfo]):
-        """Check the status of active jobs."""
+        """
+        Check the status of active jobs.
+        """
         # Loop through active jobs and act on status
         for j in active_jobs:
             jobid = j.external_jobid
@@ -608,7 +640,8 @@ class GoogleBatchExecutor(RemoteExecutor):
         sleeps=60,
         page_size=1000,
     ):
-        """Download logs using Google Cloud Logging API and save
+        """
+        Download logs using Google Cloud Logging API and save
         them locally. Since tail logging does not work, this function
         is run only at the end of the job.
         """
@@ -654,7 +687,9 @@ class GoogleBatchExecutor(RemoteExecutor):
             )
 
     def cancel_jobs(self, active_jobs: list[SubmittedJobInfo]):
-        """Cancel all active jobs. This method is called when snakemake is interrupted."""
+        """
+        Cancel all active jobs. This method is called when snakemake is interrupted.
+        """
         for job in active_jobs:
             jobid = job.external_jobid
             reason = f"User requested cancel for {jobid}"
@@ -668,8 +703,10 @@ class GoogleBatchExecutor(RemoteExecutor):
         self.shutdown()
 
     def shutdown(self):
-        """Shutdown deletes build packages if the user didn't request to clean
+        """
+        Shutdown deletes build packages if the user didn't request to clean
         up the cache. At this point we've already cancelled running jobs.
         """
+
         # Call parent shutdown
         super().shutdown()
