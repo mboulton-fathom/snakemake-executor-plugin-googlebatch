@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -1200,6 +1200,7 @@ dependencies = [
     { name = "snakemake" },
     { name = "snakemake-interface-common" },
     { name = "snakemake-interface-executor-plugins" },
+    { name = "snakemake-storage-plugin-gcs" },
 ]
 
 [package.optional-dependencies]
@@ -1225,6 +1226,7 @@ requires-dist = [
     { name = "snakemake", specifier = ">=9,<10" },
     { name = "snakemake-interface-common", specifier = ">=1.14.0,<2.0.0" },
     { name = "snakemake-interface-executor-plugins", specifier = ">=9.0.0,<10.0.0" },
+    { name = "snakemake-storage-plugin-gcs" },
     { name = "snakemake-storage-plugin-s3", marker = "extra == 'dev'", specifier = ">=0.3.1,<0.4.0" },
     { name = "uv", marker = "extra == 'dev'" },
 ]
@@ -1295,6 +1297,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7e/2d/ecd72f48e1ed49b5cc6651f1ed71ce1fdf9c86de8c241b62c0c6cd33ac51/snakemake_interface_storage_plugins-4.2.2.tar.gz", hash = "sha256:a9da228c21252e60b72ddcec68cdf581f695a9db177053b5bd565e002dc729eb", size = 14263, upload-time = "2025-07-29T15:42:30.18Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/77/97/4389957c0db9628a7661f6562fa7248a2f3881067bc83752220a80a34f34/snakemake_interface_storage_plugins-4.2.2-py3-none-any.whl", hash = "sha256:44b422c7c3d2de378b4c874cc3d421c1137309074e238f649b63f9f45956e412", size = 17122, upload-time = "2025-07-29T15:42:28.976Z" },
+]
+
+[[package]]
+name = "snakemake-storage-plugin-gcs"
+version = "1.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-cloud-storage" },
+    { name = "google-crc32c" },
+    { name = "snakemake-interface-common" },
+    { name = "snakemake-interface-storage-plugins" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/e1/bd60db14eaa980a2769f5b476923de75ca0d525c768430ac0dea7690a648/snakemake_storage_plugin_gcs-1.1.4.tar.gz", hash = "sha256:185dcd995f5f20ca83b0613bdc29bc4b7967db49adf7e45275fb4ad909b75b30", size = 14311, upload-time = "2025-03-24T13:21:00.231Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/eb/4ff61d85e0783da927fe12b70bd8c6dfd58ee0f056465951d17a3f7bf0b3/snakemake_storage_plugin_gcs-1.1.4-py3-none-any.whl", hash = "sha256:ab4cd12b87205113d10c701fa87f23524ea7515cd32a650689a116fa4b86b3da", size = 9198, upload-time = "2025-03-24T13:20:59.401Z" },
 ]
 
 [[package]]
