@@ -1,4 +1,5 @@
 import os
+from fractions import Fraction
 
 import snakemake.common.tests
 import snakemake.settings.types
@@ -33,4 +34,5 @@ class TestWorkflowsBase(snakemake.common.tests.TestWorkflowsMinioPlayStorageBase
         return snakemake.settings.types.RemoteExecutionSettings(
             seconds_between_status_checks=10,
             envvars=self.get_envvars(),
+            max_status_checks_frac=Fraction("1/2"),
         )
