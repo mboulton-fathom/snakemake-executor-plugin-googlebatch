@@ -107,7 +107,7 @@ class GoogleBatchExecutor(RemoteExecutor):
     def format_job_exec(self, job: JobExecutorInterface) -> str:
         """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
 
-        if not (self.is_container_job(job) or self.is_singularity_job(job)):
+        if not self.is_container_job(job):
             # Use the normal one
             self.logger.info("using default job exec")
             return super().format_job_exec(job)
@@ -213,11 +213,6 @@ class GoogleBatchExecutor(RemoteExecutor):
         family = self.get_param(job, "image_family")
         return "batch-cos" in family
 
-    def is_singularity_job(self, job: JobExecutorInterface) -> bool:
-        """Determine if a job is a container job based on image family."""
-        singularity_container = self.get_param(job, "singularity_container")
-        return bool(singularity_container)
-
     def is_preemptible(self, job):
         """
         Determine if a job is preemptible.
@@ -285,7 +280,6 @@ class GoogleBatchExecutor(RemoteExecutor):
         self.logger.info(f"using writer: {type(writer)}")
 
         use_container = self.get_container(job, self.get_param(job, "entrypoint"))
-        use_singularity = self.get_param(job, "singularity_container")
 
         # Setup command
         setup_command = writer.setup()
@@ -301,19 +295,6 @@ class GoogleBatchExecutor(RemoteExecutor):
         if use_container:
             self.logger.info(f"container: {use_container}")
             runnable.container = use_container
-            snakefile_text = writer.write_snakefile()
-        elif use_singularity:
-            singularity_image = self.workflow.remote_execution_settings.container_image
-            if not singularity_image:
-                raise Exception(
-                    "specified 'singularity_container' but no container was specified on the step"
-                )
-            # Run command (not used for COS)
-            run_command = writer.run()
-            self.logger.info("\n🐍️ Snakemake Command:")
-
-            runnable.script = batch_v1.Runnable.Script()
-            runnable.script.text = f"singularity run {self.get_param(job, 'singularity_protocol')}{singularity_image} {run_command}"
             snakefile_text = writer.write_snakefile()
         else:
             # Run command (not used for COS)
@@ -346,14 +327,6 @@ class GoogleBatchExecutor(RemoteExecutor):
         barrier.barrier = batch_v1.Runnable.Barrier()
         barrier.barrier.name = "wait-for-setup"
         task.runnables = [setup, snakefile_step]
-        if use_singularity:
-            # gcloud auth for singularity
-            gcloud_auth_step = batch_v1.Runnable()
-            gcloud_auth_step.script = batch_v1.Runnable.Script()
-            gcloud_auth_step.script.text = (
-                "gcloud auth configure-docker europe-docker.pkg.dev"
-            )
-            task.runnables.append(gcloud_auth_step)
 
         task.runnables.extend([barrier, runnable])
 
