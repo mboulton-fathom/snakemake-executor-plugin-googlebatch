@@ -1,8 +1,21 @@
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+from google.cloud import batch_v1
 from google.cloud.batch_v1.types import Job, JobStatus
 
 from tests import TestWorkflowsBase
+
+
+@pytest.fixture(autouse=True)
+def mocked_client():
+    mock = unittest.mock.Mock(spec=batch_v1.BatchServiceClient)
+    with patch(
+        "snakemake_executor_plugin_googlebatch.executor.batch_v1.BatchServiceClient",
+        mock,
+    ):
+        yield
 
 
 class TestWorkflowsMockedApi(TestWorkflowsBase):
