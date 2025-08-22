@@ -186,22 +186,6 @@ class ExecutorSettings(ExecutorSettingsBase):
         },
     )
 
-    singularity_container: Optional[bool] = field(
-        default=None,
-        metadata={
-            "help": "If set, use the 'container' specified on the job to run as a ysingularity container to run everything inside of like `singularity run <image> <args...>`",
-            "env_var": False,
-            "required": False,
-        },
-    )
-    singularity_protocol: str = field(
-        default="oras://",
-        metadata={
-            "help": "protocol that singularity will use with the container",
-            "env_var": False,
-            "required": False,
-        },
-    )
     entrypoint: Optional[str] = field(
         default=None,
         metadata={

@@ -288,7 +288,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         use_singularity = self.get_param(job, "singularity_container")
 
         # Setup command
-        setup_command = writer.setup(use_container or use_singularity)
+        setup_command = writer.setup()
         self.logger.info("\n🌟️ Setup Command:")
 
         # Add environment variables to the task
