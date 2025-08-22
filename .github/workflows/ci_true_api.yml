@@ -13,14 +13,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Determine dependencies
-        run: poetry lock
+      - name: Install uv based on the version defined in pyproject.toml
+        uses: astral-sh/setup-uv@v6
+        with:
+          version-file: "pyproject.toml"
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync --all-extras
 
       - id: "auth"
         uses: "google-github-actions/auth@v2"
@@ -35,4 +34,4 @@ jobs:
 
       - name: Run pytest
         run: |
-          poetry run pytest tests/tests_true_api.py -v
+          uv run pytest tests/tests_true_api.py -v

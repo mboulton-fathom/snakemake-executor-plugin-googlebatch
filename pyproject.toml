@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["flit-core >=3.12,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "snakemake-executor-plugin-googlebatch"
@@ -42,6 +42,8 @@ Documentation = "https://snakemake.github.io/snakemake-plugin-catalog/plugins/ex
 
 [project.optional-dependencies]
 dev = [
+    "flit>=3.12.0",
+    "connection-pool>=0.0.3",
     "ruff",
     "pytest>=7.4.2,<8.0.0",
     "snakemake-storage-plugin-s3>=0.3.1,<0.4.0",

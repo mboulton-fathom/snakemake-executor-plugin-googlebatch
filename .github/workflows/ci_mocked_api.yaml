@@ -7,50 +7,6 @@ on:
   pull_request:
 
 jobs:
-  formatting:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Determine dependencies
-        run: poetry lock
-
-      - name: Install Dependencies using Poetry
-        run: poetry install
-
-      - name: Check formatting
-        run: poetry run black --check .
-
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Determine dependencies
-        run: poetry lock
-
-      - name: Install Dependencies using Poetry
-        run: poetry install
-
-      - name: Check code
-        run: poetry run flake8
-
   testing-mocked-api:
     runs-on: ubuntu-latest
     permissions:
@@ -63,14 +19,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Determine dependencies
-        run: poetry lock
+      - name: Install uv based on the version defined in pyproject.toml
+        uses: astral-sh/setup-uv@v6
+        with:
+          version-file: "pyproject.toml"
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync --all-extras
 
       - id: "auth"
         uses: "google-github-actions/auth@v2"
@@ -92,7 +47,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          poetry run coverage run -m pytest tests/tests_mocked_api.py -v
+          uv run coverage run -m pytest tests/tests_mocked_api.py -v
 
       - name: Run Coverage
-        run: poetry run coverage report -m
+        run: uv run coverage report -m
