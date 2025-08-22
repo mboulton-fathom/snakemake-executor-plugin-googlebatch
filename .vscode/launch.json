@@ -4,9 +4,9 @@
         {
             "name": "Python: Debug Tests",
             "type": "debugpy",
-            "python": "${command:python.interpreterPath}",
+            "python": "/home/michael/code/snakemake-executor-plugin-googlebatch/.venv/bin/python3",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/tests",
             "purpose": [
                 "debug-test"
             ],

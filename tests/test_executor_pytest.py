@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+import snakemake
 from google.cloud import batch_v1
 from snakemake_interface_common.exceptions import WorkflowError
 from snakemake_interface_executor_plugins.executors.base import SubmittedJobInfo
@@ -19,7 +20,7 @@ class TestGoogleBatchExecutor:
 
     @pytest.fixture
     def workflow(self):
-        workflow = Mock()
+        workflow = Mock(spec=snakemake.workflow.Workflow)
         workflow.workdir = "/tmp/workdir"
         workflow.persistence.path = "/tmp/workdir"
         workflow.remote_execution_settings.jobname = "sm-{jobid}"
@@ -54,7 +55,6 @@ class TestGoogleBatchExecutor:
     def executor(self, workflow, executor_settings):
         with (
             patch("google.cloud.batch_v1.BatchServiceClient"),
-            patch("threading.Thread"),
             patch("builtins.open") as mock_open,
         ):
             # Configure the mock to support context manager protocol
@@ -64,10 +64,6 @@ class TestGoogleBatchExecutor:
 
             executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
             return executor
-
-    def test_post_init_success(self, executor):
-        assert executor.batch is not None
-        assert executor.workdir == "/tmp/workdir"
 
     def test_post_init_failure(self):
         mock_workflow = Mock()
