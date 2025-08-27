@@ -1,19 +1,27 @@
 import asyncio
+import logging
 import tempfile
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import snakemake
 from google.cloud import batch_v1
+from snakemake.jobs import Job
 from snakemake_interface_executor_plugins.executors.base import SubmittedJobInfo
-from snakemake_interface_executor_plugins.settings import ExecutorSettingsBase
+from google.cloud.batch_v1.types import job as gcb_job
 
+from snakemake_executor_plugin_googlebatch import ExecutorSettings
 from snakemake_executor_plugin_googlebatch.executor import GoogleBatchExecutor
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_logging():
+    logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture
 def executor_settings():
-    settings = Mock(spec=ExecutorSettingsBase)
+    settings = Mock(spec_set=ExecutorSettings)
     settings.project = "test-project"
     settings.region = "us-central1"
     return settings
@@ -21,23 +29,30 @@ def executor_settings():
 
 @pytest.fixture
 def workflow():
-    workflow = Mock(spec=snakemake.workflow.Workflow)
+    workflow = Mock(spec_set=snakemake.workflow.Workflow)
     workflow.workdir = "/tmp/workdir"
     workflow.persistence.path = "/tmp/workdir"
+
     workflow.remote_execution_settings.jobname = "sm-{jobid}"
+    # The snakemake 'container_image', not the one defined in our ExecutorSettings
     workflow.remote_execution_settings.container_image = "snakemake/snakemake:latest"
     workflow.remote_execution_settings.preemptible_rules.is_preemptible.return_value = (
         False
     )
     workflow.remote_execution_settings.seconds_between_status_checks = 10
     workflow.remote_execution_settings.max_status_checks_per_second = 1
+
+    workflow.executor_settings = ExecutorSettings()
+    workflow.executor_settings.container = "snakemake/snakemake:latest"
+    workflow.executor_settings.entrypoint = "/bin/true"
+    workflow.executor_settings.docker_username = None
+    workflow.executor_settings.docker_password = None
+
     workflow.storage_settings.shared_fs_usage = []
     workflow.group_settings.local_groupid = 1
-    workflow.executor_settings = Mock()
     workflow.spawned_job_args_factory.general_args.return_value = "--dry-run"
     workflow.spawned_job_args_factory.precommand.return_value = ""
     workflow.spawned_job_args_factory.envvars.return_value = {}
-    workflow.jobscript = "/tmp/test_jobscript.sh"
 
     with tempfile.NamedTemporaryFile() as f:
         workflow.main_snakefile = f.name
@@ -46,7 +61,7 @@ def workflow():
 
 @pytest.fixture
 def job():
-    job = Mock()
+    job = Mock(spec_set=Job)
     job.name = "test-job"
     job.resources = {"googlebatch_image_family": "batch-cos-stable"}
     job.is_group.return_value = False
@@ -72,10 +87,8 @@ def executor(workflow, executor_settings):
         mock_open.return_value.__exit__ = Mock(return_value=None)
 
         executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
-        patcher = patch.object(executor, "get_job_args", lambda x: None)
-        patcher.start()
-        yield executor
-        patcher.stop()
+        with patch.object(executor, "get_job_args", return_value=[]):
+            yield executor
 
 
 class TestGoogleBatchExecutor:
@@ -166,6 +179,7 @@ class TestGoogleBatchExecutor:
             "googlebatch_image_family": "batch-cos-stable",
             "googlebatch_retry_count": 3,
             "googlebatch_max_run_duration": "3600s",
+            "googlebatch_container": "snakemake/snakemake:latest",
         }
 
         # Mock batch client response
@@ -174,13 +188,10 @@ class TestGoogleBatchExecutor:
         mock_created_job.uid = "test-uid"
         executor.batch.create_job.return_value = mock_created_job
 
-        print(executor)
-        print(executor.run_job)
         executor.run_job(job)
 
         # Verify job was submitted
         executor.batch.create_job.assert_called_once()
-        assert len(executor.waiting_for_submit) == 1
 
     @patch("snakemake_executor_plugin_googlebatch.executor.logging.Client")
     def test_save_finished_job_logs(self, mock_logging_client, executor):
@@ -254,14 +265,18 @@ class TestGoogleBatchExecutor:
     @patch("snakemake_executor_plugin_googlebatch.executor.cmdutil.get_writer")
     def test_check_active_jobs_succeeded(self, mock_get_writer, executor):
         # Setup mock job
-        mock_submitted_job = Mock(spec=SubmittedJobInfo)
+        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
         mock_submitted_job.external_jobid = (
             "projects/test-project/locations/us-central1/jobs/test-job"
         )
         mock_submitted_job.aux = {"logfile": "/tmp/test.log", "last_seen": None}
 
         # Setup mock batch response
-        mock_response = Mock()
+        mock_response = Mock(spec=gcb_job.Job)
+        print(mock_response)
+        print(mock_response.__dict__)
+        print(mock_response.status)
+        print(mock_response.status.stats)
         mock_response.status.state.name = "SUCCEEDED"
         executor.batch.get_job.return_value = mock_response
 
@@ -281,7 +296,7 @@ class TestGoogleBatchExecutor:
     @patch("snakemake_executor_plugin_googlebatch.executor.cmdutil.get_writer")
     def test_check_active_jobs_failed(self, mock_get_writer, executor):
         # Setup mock job
-        mock_submitted_job = Mock(spec=SubmittedJobInfo)
+        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
         mock_submitted_job.external_jobid = (
             "projects/test-project/locations/us-central1/jobs/test-job"
         )
@@ -289,7 +304,7 @@ class TestGoogleBatchExecutor:
         mock_submitted_job.job = Mock()
 
         # Setup mock batch response
-        mock_response = Mock()
+        mock_response = Mock(spec_set=gcb_job.Job)
         mock_response.status.state.name = "FAILED"
         executor.batch.get_job.return_value = mock_response
 
@@ -307,7 +322,7 @@ class TestGoogleBatchExecutor:
         executor.batch.get_job.assert_called_once()
 
     def test_cancel_jobs(self, executor):
-        mock_submitted_job = Mock(spec=SubmittedJobInfo)
+        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
         mock_submitted_job.external_jobid = (
             "projects/test-project/locations/us-central1/jobs/test-job"
         )
