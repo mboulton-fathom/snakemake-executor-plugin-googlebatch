@@ -72,8 +72,10 @@ def executor(workflow, executor_settings):
         mock_open.return_value.__exit__ = Mock(return_value=None)
 
         executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
-        with patch.object(executor, "get_job_args", lambda x: None):
-            return executor
+        patcher = patch.object(executor, "get_job_args", lambda x: None)
+        patcher.start()
+        yield executor
+        patcher.stop()
 
 
 class TestGoogleBatchExecutor:
