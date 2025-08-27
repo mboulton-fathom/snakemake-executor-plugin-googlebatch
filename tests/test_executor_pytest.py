@@ -252,17 +252,18 @@ class TestGoogleBatchExecutor:
         )
 
     @patch("snakemake_executor_plugin_googlebatch.executor.cmdutil.get_writer")
-    def test_check_active_jobs_succeeded(self, mock_get_writer, executor):
+    def test_check_active_jobs_succeeded(self, mock_get_writer, executor, job):
         # Setup mock job
-        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
-        mock_submitted_job.external_jobid = (
-            "projects/test-project/locations/us-central1/jobs/test-job"
+        mock_batch_job = Mock()
+        submitted_job = SubmittedJobInfo(
+            job=job,
+            external_jobid="projects/test-project/locations/us-central1/jobs/test-job",
+            aux={
+                "logfile": "/tmp/test.log",
+                "last_seen": None,
+                "batch_job": mock_batch_job,
+            },
         )
-        mock_submitted_job.aux = {
-            "logfile": "/tmp/test.log",
-            "last_seen": None,
-            "batch_job": mock_submitted_job,
-        }
 
         # Setup mock batch response
         mock_response = gcp_job.Job()
@@ -272,7 +273,7 @@ class TestGoogleBatchExecutor:
         # Create async generator and get result
         async def collect_results():
             results = []
-            async for result in executor.check_active_jobs([mock_submitted_job]):
+            async for result in executor.check_active_jobs([submitted_job]):
                 results.append(result)
             return results
 
@@ -283,18 +284,18 @@ class TestGoogleBatchExecutor:
         executor.batch.get_job.assert_called_once()
 
     @patch("snakemake_executor_plugin_googlebatch.executor.cmdutil.get_writer")
-    def test_check_active_jobs_failed(self, mock_get_writer, executor):
+    def test_check_active_jobs_failed(self, mock_get_writer, executor, job):
         # Setup mock job
-        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
-        mock_submitted_job.external_jobid = (
-            "projects/test-project/locations/us-central1/jobs/test-job"
+        mock_batch_job = Mock()
+        submitted_job = SubmittedJobInfo(
+            job=job,
+            external_jobid="projects/test-project/locations/us-central1/jobs/test-job",
+            aux={
+                "logfile": "/tmp/test.log",
+                "last_seen": None,
+                "batch_job": mock_batch_job,
+            },
         )
-        mock_submitted_job.aux = {
-            "logfile": "/tmp/test.log",
-            "last_seen": None,
-            "batch_job": mock_submitted_job,
-        }
-        mock_submitted_job.job = Mock()
 
         # Setup mock batch response
         mock_response = gcp_job.Job()
@@ -304,7 +305,7 @@ class TestGoogleBatchExecutor:
         # Create async generator and get result
         async def collect_results():
             collected = []
-            async for result in executor.check_active_jobs([mock_submitted_job]):
+            async for result in executor.check_active_jobs([submitted_job]):
                 collected.append(result)
             return collected
 
@@ -314,16 +315,16 @@ class TestGoogleBatchExecutor:
         assert len(results) == 0
         executor.batch.get_job.assert_called_once()
 
-    def test_cancel_jobs(self, executor):
-        mock_submitted_job = Mock(spec_set=SubmittedJobInfo)
-        mock_submitted_job.external_jobid = (
-            "projects/test-project/locations/us-central1/jobs/test-job"
+    def test_cancel_jobs(self, executor, job):
+        submitted_job = SubmittedJobInfo(
+            job=job,
+            external_jobid="projects/test-project/locations/us-central1/jobs/test-job",
         )
 
         mock_operation = Mock()
         mock_operation.result.return_value = "cancelled"
         executor.batch.delete_job.return_value = mock_operation
 
-        executor.cancel_jobs([mock_submitted_job])
+        executor.cancel_jobs([submitted_job])
 
         executor.batch.delete_job.assert_called_once()
