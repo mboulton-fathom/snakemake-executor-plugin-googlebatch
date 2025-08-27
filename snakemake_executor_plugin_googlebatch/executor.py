@@ -129,6 +129,13 @@ class GoogleBatchExecutor(RemoteExecutor):
         if precommand:
             precommand += " &&"
 
+        print(self.get_job_args)
+        print(self.get_job_args)
+        print(self.get_job_args)
+        print(self.get_job_args)
+        print(self.get_job_args)
+        print(self.get_job_args)
+
         args = join_cli_args(
             [
                 self.get_envvar_declarations(),
