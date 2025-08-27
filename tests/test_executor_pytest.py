@@ -286,14 +286,12 @@ class TestGoogleBatchExecutor:
     @patch("snakemake_executor_plugin_googlebatch.executor.cmdutil.get_writer")
     def test_check_active_jobs_failed(self, mock_get_writer, executor, job):
         # Setup mock job
-        mock_batch_job = Mock()
         submitted_job = SubmittedJobInfo(
             job=job,
             external_jobid="projects/test-project/locations/us-central1/jobs/test-job",
             aux={
                 "logfile": "/tmp/test.log",
                 "last_seen": None,
-                "batch_job": mock_batch_job,
             },
         )
 
