@@ -104,6 +104,9 @@ class GoogleBatchExecutor(RemoteExecutor):
         uid = str(uuid.uuid4())
         return self.fix_job_name(job.name) + "-" + uid[0:6]
 
+    def get_job_args(self, job):
+        return super().get_job_args(job)
+
     def format_job_exec(self, job: JobExecutorInterface) -> str:
         """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
 
@@ -128,13 +131,6 @@ class GoogleBatchExecutor(RemoteExecutor):
         )
         if precommand:
             precommand += " &&"
-
-        print(self.get_job_args)
-        print(self.get_job_args)
-        print(self.get_job_args)
-        print(self.get_job_args)
-        print(self.get_job_args)
-        print(self.get_job_args)
 
         args = join_cli_args(
             [

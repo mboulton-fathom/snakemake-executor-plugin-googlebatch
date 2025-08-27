@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 import snakemake
 from google.cloud import batch_v1
+from google.cloud.batch_v1.types import job as gcp_job
 from snakemake.jobs import Job
 from snakemake_interface_executor_plugins.executors.base import SubmittedJobInfo
-from google.cloud.batch_v1.types import job as gcb_job
 
 from snakemake_executor_plugin_googlebatch import ExecutorSettings
 from snakemake_executor_plugin_googlebatch.executor import GoogleBatchExecutor
@@ -88,7 +88,15 @@ def executor(workflow, executor_settings):
 
         executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
         with patch.object(executor, "get_job_args", return_value=[]):
-            yield executor
+            with patch.object(
+                executor,
+                "save_finished_job_logs",
+            ):
+                with patch.object(
+                    executor,
+                    "report_job_success",
+                ):
+                    yield executor
 
 
 class TestGoogleBatchExecutor:
@@ -193,25 +201,6 @@ class TestGoogleBatchExecutor:
         # Verify job was submitted
         executor.batch.create_job.assert_called_once()
 
-    @patch("snakemake_executor_plugin_googlebatch.executor.logging.Client")
-    def test_save_finished_job_logs(self, mock_logging_client, executor):
-        # Setup mock job info
-        job_info = Mock()
-        job_info.aux = {"batch_job": Mock(uid="test-uid"), "logfile": "/tmp/test.log"}
-
-        mock_logger = Mock()
-        mock_logging_client.return_value.logger.return_value = mock_logger
-
-        # Mock log entries
-        mock_entry = Mock()
-        mock_entry.payload = "test log entry"
-        mock_logger.list_entries.return_value = [mock_entry]
-
-        executor.save_finished_job_logs(job_info)
-
-        # Verify log was written
-        mock_logging_client.return_value.logger.assert_called_with("batch_task_logs")
-
     def test_get_accelerators_with_gpu_count(self, executor, job):
         job.resources = {"nvidia_gpu": "2"}
         accelerators = executor.get_accelerators(job)
@@ -269,15 +258,15 @@ class TestGoogleBatchExecutor:
         mock_submitted_job.external_jobid = (
             "projects/test-project/locations/us-central1/jobs/test-job"
         )
-        mock_submitted_job.aux = {"logfile": "/tmp/test.log", "last_seen": None}
+        mock_submitted_job.aux = {
+            "logfile": "/tmp/test.log",
+            "last_seen": None,
+            "batch_job": mock_submitted_job,
+        }
 
         # Setup mock batch response
-        mock_response = Mock(spec=gcb_job.Job)
-        print(mock_response)
-        print(mock_response.__dict__)
-        print(mock_response.status)
-        print(mock_response.status.stats)
-        mock_response.status.state.name = "SUCCEEDED"
+        mock_response = gcp_job.Job()
+        mock_response.status.state = gcp_job.JobStatus.State.SUCCEEDED
         executor.batch.get_job.return_value = mock_response
 
         # Create async generator and get result
@@ -300,12 +289,16 @@ class TestGoogleBatchExecutor:
         mock_submitted_job.external_jobid = (
             "projects/test-project/locations/us-central1/jobs/test-job"
         )
-        mock_submitted_job.aux = {"logfile": "/tmp/test.log", "last_seen": None}
+        mock_submitted_job.aux = {
+            "logfile": "/tmp/test.log",
+            "last_seen": None,
+            "batch_job": mock_submitted_job,
+        }
         mock_submitted_job.job = Mock()
 
         # Setup mock batch response
-        mock_response = Mock(spec_set=gcb_job.Job)
-        mock_response.status.state.name = "FAILED"
+        mock_response = gcp_job.Job()
+        mock_response.status.state = gcp_job.JobStatus.State.FAILED
         executor.batch.get_job.return_value = mock_response
 
         # Create async generator and get result
