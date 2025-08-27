@@ -34,7 +34,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          uv run coverage run -m pytest tests/tests_mocked_api.py -v
+          uv run coverage run -m pytest tests/ -v
 
       - name: Run Coverage
         run: uv run coverage report -m
