@@ -71,22 +71,9 @@ def executor(workflow, executor_settings):
         mock_open.return_value.__enter__ = Mock(return_value=mock_file)
         mock_open.return_value.__exit__ = Mock(return_value=None)
 
-
-        with patch(
-            "snakemake_interface_executor_plugins.executors.real.RealExecutor.get_job_args",
-            return_value=[],
-        ):
-            with patch(
-                "snakemake_interface_executor_plugins.executors.remote.RemoteExecutor.get_job_args",
-                return_value=[],
-            ):
-                executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
-                print(executor.get_job_args)
-                print(executor.get_job_args)
-                print(executor.get_job_args)
-                print(executor.get_job_args)
-                with patch.object(executor, "get_job_args", return_value=[]):
-                    return executor
+        executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
+        with patch.object(executor, "get_job_args", lambda x: None):
+            return executor
 
 
 class TestGoogleBatchExecutor:
