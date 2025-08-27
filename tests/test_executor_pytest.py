@@ -11,67 +11,85 @@ from snakemake_interface_executor_plugins.settings import ExecutorSettingsBase
 from snakemake_executor_plugin_googlebatch.executor import GoogleBatchExecutor
 
 
-class TestGoogleBatchExecutor:
-    @pytest.fixture
-    def executor_settings(self):
-        settings = Mock(spec=ExecutorSettingsBase)
-        settings.project = "test-project"
-        settings.region = "us-central1"
-        return settings
+@pytest.fixture
+def executor_settings():
+    settings = Mock(spec=ExecutorSettingsBase)
+    settings.project = "test-project"
+    settings.region = "us-central1"
+    return settings
 
-    @pytest.fixture
-    def workflow(self):
-        workflow = Mock(spec=snakemake.workflow.Workflow)
-        workflow.workdir = "/tmp/workdir"
-        workflow.persistence.path = "/tmp/workdir"
-        workflow.remote_execution_settings.jobname = "sm-{jobid}"
-        workflow.remote_execution_settings.container_image = (
-            "snakemake/snakemake:latest"
-        )
-        workflow.remote_execution_settings.preemptible_rules.is_preemptible.return_value = False
-        workflow.remote_execution_settings.seconds_between_status_checks = 10
-        workflow.remote_execution_settings.max_status_checks_per_second = 1
-        workflow.storage_settings.shared_fs_usage = []
-        workflow.group_settings.local_groupid = 1
-        workflow.executor_settings = Mock()
-        workflow.spawned_job_args_factory.general_args.return_value = "--dry-run"
-        workflow.spawned_job_args_factory.precommand.return_value = ""
-        workflow.spawned_job_args_factory.envvars.return_value = {}
-        workflow.jobscript = "/tmp/test_jobscript.sh"
 
-        with tempfile.NamedTemporaryFile() as f:
-            workflow.main_snakefile = f.name
-            yield workflow
+@pytest.fixture
+def workflow():
+    workflow = Mock(spec=snakemake.workflow.Workflow)
+    workflow.workdir = "/tmp/workdir"
+    workflow.persistence.path = "/tmp/workdir"
+    workflow.remote_execution_settings.jobname = "sm-{jobid}"
+    workflow.remote_execution_settings.container_image = "snakemake/snakemake:latest"
+    workflow.remote_execution_settings.preemptible_rules.is_preemptible.return_value = (
+        False
+    )
+    workflow.remote_execution_settings.seconds_between_status_checks = 10
+    workflow.remote_execution_settings.max_status_checks_per_second = 1
+    workflow.storage_settings.shared_fs_usage = []
+    workflow.group_settings.local_groupid = 1
+    workflow.executor_settings = Mock()
+    workflow.spawned_job_args_factory.general_args.return_value = "--dry-run"
+    workflow.spawned_job_args_factory.precommand.return_value = ""
+    workflow.spawned_job_args_factory.envvars.return_value = {}
+    workflow.jobscript = "/tmp/test_jobscript.sh"
 
-    @pytest.fixture
-    def job(self):
-        job = Mock()
-        job.name = "test-job"
-        job.resources = {"googlebatch_image_family": "batch-cos-stable"}
-        job.is_group.return_value = False
-        job.rules = []
-        job.rule.name = "test-rule"
+    with tempfile.NamedTemporaryFile() as f:
+        workflow.main_snakefile = f.name
+        yield workflow
 
-        def logfile_suggestion(path):
-            return path
 
-        job.logfile_suggestion = logfile_suggestion
-        return job
+@pytest.fixture
+def job():
+    job = Mock()
+    job.name = "test-job"
+    job.resources = {"googlebatch_image_family": "batch-cos-stable"}
+    job.is_group.return_value = False
+    job.rules = []
+    job.rule.name = "test-rule"
 
-    @pytest.fixture
-    def executor(self, workflow, executor_settings):
-        with (
-            patch("google.cloud.batch_v1.BatchServiceClient"),
-            patch("builtins.open") as mock_open,
+    def logfile_suggestion(path):
+        return path
+
+    job.logfile_suggestion = logfile_suggestion
+    return job
+
+
+@pytest.fixture
+def executor(workflow, executor_settings):
+    with (
+        patch("google.cloud.batch_v1.BatchServiceClient"),
+        patch("builtins.open") as mock_open,
+    ):
+        # Configure the mock to support context manager protocol
+        mock_file = Mock()
+        mock_open.return_value.__enter__ = Mock(return_value=mock_file)
+        mock_open.return_value.__exit__ = Mock(return_value=None)
+
+
+        with patch(
+            "snakemake_interface_executor_plugins.executors.real.RealExecutor.get_job_args",
+            return_value=[],
         ):
-            # Configure the mock to support context manager protocol
-            mock_file = Mock()
-            mock_open.return_value.__enter__ = Mock(return_value=mock_file)
-            mock_open.return_value.__exit__ = Mock(return_value=None)
+            with patch(
+                "snakemake_interface_executor_plugins.executors.remote.RemoteExecutor.get_job_args",
+                return_value=[],
+            ):
+                executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
+                print(executor.get_job_args)
+                print(executor.get_job_args)
+                print(executor.get_job_args)
+                print(executor.get_job_args)
+                with patch.object(executor, "get_job_args", return_value=[]):
+                    return executor
 
-            executor = GoogleBatchExecutor(workflow=workflow, logger=MagicMock())
-            return executor
 
+class TestGoogleBatchExecutor:
     def test_get_param_from_resources(self, executor, job):
         job.resources = {"googlebatch_memory": 2048}
         executor.executor_settings.memory = 1024
@@ -167,6 +185,8 @@ class TestGoogleBatchExecutor:
         mock_created_job.uid = "test-uid"
         executor.batch.create_job.return_value = mock_created_job
 
+        print(executor)
+        print(executor.run_job)
         executor.run_job(job)
 
         # Verify job was submitted
