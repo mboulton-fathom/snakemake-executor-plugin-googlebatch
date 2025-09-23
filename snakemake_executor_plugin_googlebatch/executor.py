@@ -191,6 +191,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # This will ensure the Snakefile is in the PWD of the COS container
         container.volumes = ["/tmp/workdir:/tmp/workdir"]
         container.options = (
+            # Run as root to avoid permissions issues with mounted buckets/paths
             "--network host --user 0 --workdir /tmp/workdir -e PYTHONUNBUFFERED=1"
         )
 
