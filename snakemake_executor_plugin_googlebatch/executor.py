@@ -288,7 +288,7 @@ class GoogleBatchExecutor(RemoteExecutor):
 
         # Setup command
         setup_command = writer.setup()
-        self.logger.info("\n🌟️ Setup Command:")
+        self.logger.info(f"\n🌟️ Setup Command: {setup_command}")
 
         # Add environment variables to the task
         envars = self.workflow.spawned_job_args_factory.envvars()
