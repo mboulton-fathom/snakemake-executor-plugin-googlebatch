@@ -105,7 +105,11 @@ class GoogleBatchExecutor(RemoteExecutor):
         return self.fix_job_name(job.name) + "-" + uid[0:6]
 
     def format_job_exec(self, job: JobExecutorInterface) -> str:
-        """Overrides RealExecutor.format_job_exec for containers, removing unwanted args"""
+        """Overrides RealExecutor.format_job_exec for containers.
+
+        RealExecutor add a command prefix which changes directory, which we don't want.
+        It also tries to install snakemake, whereas this assumes that snakemake is already installed.
+        """
 
         if not self.is_container_job(job):
             # Use the normal one
