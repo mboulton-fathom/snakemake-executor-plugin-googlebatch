@@ -1,7 +1,7 @@
 # Hello World COS
 
 The example is for the container operating system (COS), which basically means running inside a container
-instead of on a native virtual machine. This also means using the default Snakemake image. Here is how to see images in
+instead of on a native virtual machine. This requires building a custom image. Here is how to see images in
 the project:
 
 ```bash
