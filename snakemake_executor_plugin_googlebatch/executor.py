@@ -379,6 +379,7 @@ class GoogleBatchExecutor(RemoteExecutor):
         # The job's parent is the region in which the job will run
         create_request.parent = self.project_parent(job)
         createdjob = self.batch.create_job(create_request)
+        self.logger.info(f"Created job: {createdjob}")
 
         # Save aux metadata
         # Last seen will hold the timestamp of last recorded status
