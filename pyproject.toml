@@ -1,6 +1,6 @@
 [project]
 name = "snakemake-executor-plugin-googlebatch"
-version = "0.6.0"
+version = "0.4.0"
 description = "A Snakemake executor plugin for Google Batch."
 readme = "README.md"
 requires-python = ">=3.11"
